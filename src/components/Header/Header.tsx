@@ -17,31 +17,13 @@ export const Header: React.FC<Props> = ({
   const [formDisable, setFormDisable] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddTodo = (title: string) => {
-    setFormDisable(true);
-    setTempTodo({ id: 0, userId: USER_ID, title, completed: false });
-
-    return postTodo({ userId: USER_ID, title, completed: false })
-      .then(loadTodos)
-      .catch(error => {
-        setErrorMessage('Unable to add a todo');
-        setTimeout(() => setErrorMessage(''), 3000);
-
-        throw error;
-      })
-      .finally(() => {
-        setFormDisable(false);
-        setTempTodo(null);
-      });
-  };
-
   useEffect(() => {
     if (!formDisable) {
       inputRef.current?.focus();
     }
   }, [formDisable]);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     const trimmedTitle = tempTitle.trim();
@@ -53,9 +35,32 @@ export const Header: React.FC<Props> = ({
       return;
     }
 
-    handleAddTodo(trimmedTitle)
-      .then(() => setTempTitle(''))
-      .finally(() => inputRef.current?.focus());
+    setFormDisable(true);
+    setTempTodo({
+      id: 0,
+      userId: USER_ID,
+      title: trimmedTitle,
+      completed: false,
+    });
+
+    try {
+      await postTodo({
+        userId: USER_ID,
+        title: trimmedTitle,
+        completed: false,
+      });
+
+      setTempTitle('');
+
+      await loadTodos();
+    } catch (error) {
+      setErrorMessage('Unable to add a todo');
+      setTimeout(() => setErrorMessage(''), 3000);
+    } finally {
+      setFormDisable(false);
+      setTempTodo(null);
+      inputRef.current?.focus();
+    }
   };
 
   return (
