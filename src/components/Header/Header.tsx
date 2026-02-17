@@ -1,92 +1,109 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { USER_ID, postTodo } from '../../api/todos';
 import { Todo } from '../../types/Todo';
 
 interface Props {
+  setTodosFromServer: React.Dispatch<React.SetStateAction<Todo[]>>;
   setErrorMessage: (msg: string) => void;
   setTempTodo: React.Dispatch<React.SetStateAction<Todo | null>>;
-  loadTodos: () => Promise<void>;
 }
 
-export const Header: React.FC<Props> = ({
-  setErrorMessage,
-  setTempTodo,
-  loadTodos,
-}) => {
-  const [tempTitle, setTempTitle] = useState('');
-  const [formDisable, setFormDisable] = useState<boolean>(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+export interface HeaderRef {
+  focusInput: () => void;
+}
 
-  useEffect(() => {
-    if (!formDisable) {
-      inputRef.current?.focus();
-    }
-  }, [formDisable]);
+export const Header = forwardRef<HeaderRef, Props>(
+  ({ setTodosFromServer, setErrorMessage, setTempTodo }, ref) => {
+    const [tempTitle, setTempTitle] = useState('');
+    const [formDisable, setFormDisable] = useState<boolean>(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+    useImperativeHandle(ref, () => ({
+      focusInput: () => {
+        inputRef.current?.focus();
+      },
+    }));
 
-    const trimmedTitle = tempTitle.trim();
+    useEffect(() => {
+      if (!formDisable) {
+        inputRef.current?.focus();
+      }
+    }, [formDisable]);
 
-    if (!trimmedTitle) {
-      setErrorMessage('Title should not be empty');
-      setTimeout(() => setErrorMessage(''), 3000);
+    const handleSubmit = async (event: React.FormEvent) => {
+      event.preventDefault();
 
-      return;
-    }
-
-    setFormDisable(true);
-    setTempTodo({
-      id: 0,
-      userId: USER_ID,
-      title: trimmedTitle,
-      completed: false,
-    });
-
-    try {
-      await postTodo({
+      const trimmedTitle = tempTitle.trim();
+      const tempTodo: Todo = {
+        id: 0,
         userId: USER_ID,
         title: trimmedTitle,
         completed: false,
-      });
+      };
 
-      setTempTitle('');
+      if (!trimmedTitle) {
+        setErrorMessage('Title should not be empty');
+        setTimeout(() => setErrorMessage(''), 3000);
 
-      await loadTodos();
-    } catch (error) {
-      setErrorMessage('Unable to add a todo');
-      setTimeout(() => setErrorMessage(''), 3000);
-    } finally {
-      setFormDisable(false);
-      setTempTodo(null);
-      inputRef.current?.focus();
-    }
-  };
+        return;
+      }
 
-  return (
-    <header className="todoapp__header">
-      {/* this button should have `active` class only if all todos are completed */}
+      setFormDisable(true);
+      setTempTodo(tempTodo);
 
-      <button
-        type="button"
-        className="todoapp__toggle-all active"
-        data-cy="ToggleAllButton"
-      />
+      try {
+        const newTodoFromServer = await postTodo({
+          userId: USER_ID,
+          title: trimmedTitle,
+          completed: false,
+        });
 
-      {/* Add a todo on form submit */}
+        setTodosFromServer(prev => [...prev, newTodoFromServer]);
 
-      <form onSubmit={handleSubmit}>
-        <input
-          ref={inputRef}
-          data-cy="NewTodoField"
-          type="text"
-          className="todoapp__new-todo"
-          placeholder="What needs to be done?"
-          value={tempTitle}
-          onChange={e => setTempTitle(e.target.value)}
-          disabled={formDisable}
+        setTempTitle('');
+      } catch (error) {
+        setErrorMessage('Unable to add a todo');
+        setTimeout(() => setErrorMessage(''), 3000);
+      } finally {
+        setFormDisable(false);
+        setTempTodo(null);
+        inputRef.current?.focus();
+      }
+    };
+
+    return (
+      <header className="todoapp__header">
+        {/* this button should have `active` class only if all todos are completed */}
+
+        <button
+          type="button"
+          className="todoapp__toggle-all active"
+          data-cy="ToggleAllButton"
         />
-      </form>
-    </header>
-  );
-};
+
+        {/* Add a todo on form submit */}
+
+        <form onSubmit={handleSubmit}>
+          <input
+            ref={inputRef}
+            data-cy="NewTodoField"
+            type="text"
+            className="todoapp__new-todo"
+            placeholder="What needs to be done?"
+            value={tempTitle}
+            onChange={e => setTempTitle(e.target.value)}
+            disabled={formDisable}
+          />
+        </form>
+      </header>
+    );
+  },
+);
+
+Header.displayName = 'Header';

@@ -1,11 +1,11 @@
 /* eslint-disable max-len */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { UserWarning } from './UserWarning';
 import { deleteTodos, getTodos, USER_ID } from './api/todos';
 import { Todo } from './types/Todo';
 import { FilterMethods } from './types/FilterMethods';
-import { Header } from './components/Header/Header';
+import { Header, HeaderRef } from './components/Header/Header';
 import { TodoList } from './components/TodoList/TodoList';
 import { Footer } from './components/Footer/Footer';
 import { ErrorNotification } from './components/ErrorNotification/ErrorNotification';
@@ -15,6 +15,8 @@ export const App: React.FC = () => {
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [filteringMethod, setFilteringMethod] = useState<FilterMethods>('All');
+  const [loadingTodoId, setLoadingTodoId] = useState<number | null>(null);
+  const headerRef = useRef<HeaderRef>(null);
 
   const loadTodos = () => {
     return getTodos()
@@ -46,12 +48,28 @@ export const App: React.FC = () => {
   }
 
   const deleteTodo = (currentId: number) => {
+    setLoadingTodoId(currentId);
+
     deleteTodos(currentId)
-      .then(loadTodos)
+      .then(() => {
+        setTodosFromServer(prev => prev.filter(todo => todo.id !== currentId));
+        headerRef.current?.focusInput();
+      })
       .catch(() => {
         setErrorMessage('Unable to delete a todo');
         setTimeout(() => setErrorMessage(''), 3000);
+      })
+      .finally(() => {
+        setLoadingTodoId(null);
       });
+  };
+
+  const deleteCompleted = () => {
+    const completedNum = todosFromServer.filter(todo => todo.completed);
+
+    for (let i = 0; i < completedNum.length; i++) {
+      deleteTodo(completedNum[i].id);
+    }
   };
 
   return (
@@ -60,15 +78,17 @@ export const App: React.FC = () => {
 
       <div className="todoapp__content">
         <Header
+          setTodosFromServer={setTodosFromServer}
           setErrorMessage={setErrorMessage}
           setTempTodo={setTempTodo}
-          loadTodos={loadTodos}
+          ref={headerRef}
         />
 
         <TodoList
           tempTodo={tempTodo}
           todos={visibleTodos}
           onDelete={deleteTodo}
+          loadingTodoId={loadingTodoId}
         />
 
         {/* Hide the footer if there are no todos */}
@@ -76,6 +96,7 @@ export const App: React.FC = () => {
           todos={todosFromServer}
           filteringMethod={filteringMethod}
           setFilteringMethod={setFilteringMethod}
+          deleteCompleted={deleteCompleted}
         />
       </div>
       <ErrorNotification errorMessage={errorMessage} />

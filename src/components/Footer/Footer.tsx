@@ -6,12 +6,14 @@ interface Props {
   todos: Todo[];
   filteringMethod: FilterMethods;
   setFilteringMethod: (f_method: FilterMethods) => void;
+  deleteCompleted: () => void;
 }
 
 export const Footer: React.FC<Props> = ({
   todos,
   filteringMethod,
   setFilteringMethod,
+  deleteCompleted,
 }) => {
   const hasCompleted = todos.some(todo => todo.completed);
   /* Hide the footer if there are no todos */
@@ -59,6 +61,7 @@ export const Footer: React.FC<Props> = ({
           className="todoapp__clear-completed"
           data-cy="ClearCompletedButton"
           disabled={!hasCompleted}
+          onClick={() => deleteCompleted()}
         >
           Clear completed
         </button>

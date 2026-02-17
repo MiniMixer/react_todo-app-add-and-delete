@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Todo } from '../../types/Todo';
 
 interface Props {
@@ -13,7 +13,6 @@ export const TodoItem: React.FC<Props> = ({
   isLoader = false,
 }) => {
   const todoId = `todo-status-${todo.id}`;
-  const [loading, setLoading] = useState<boolean>(false);
 
   return (
     <div data-cy="Todo" className={`todo ${todo.completed && 'completed'}`}>
@@ -37,12 +36,12 @@ export const TodoItem: React.FC<Props> = ({
 
       {/* Remove button appears only on hover */}
       <button
+        disabled={isLoader}
         type="button"
         className="todo__remove"
         data-cy="TodoDelete"
         onClick={() => {
           onDelete(todo.id);
-          setLoading(true);
         }}
       >
         ×
@@ -51,7 +50,7 @@ export const TodoItem: React.FC<Props> = ({
       {/* overlay will cover the todo while it is being deleted or updated */}
       <div
         data-cy="TodoLoader"
-        className={`modal overlay ${(isLoader || loading) && `is-active`}`}
+        className={`modal overlay ${isLoader && `is-active`}`}
       >
         <div className="modal-background has-background-white-ter" />
         <div className="loader" />
