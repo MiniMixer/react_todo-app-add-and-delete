@@ -6,14 +6,14 @@ interface Props {
   todos: Todo[];
   tempTodo: Todo | null;
   onDelete: (id: number) => void;
-  loadingTodoId: number | null;
+  loadingTodoIds: number[];
 }
 
 export const TodoList: React.FC<Props> = ({
   todos,
   tempTodo,
   onDelete,
-  loadingTodoId,
+  loadingTodoIds,
 }) => (
   <section className="todoapp__main" data-cy="TodoList">
     {todos.map(todo => {
@@ -24,7 +24,7 @@ export const TodoList: React.FC<Props> = ({
           key={todoId}
           todo={todo}
           onDelete={onDelete}
-          isLoader={loadingTodoId === todo.id}
+          isLoader={loadingTodoIds.includes(todo.id)}
         />
       );
     })}

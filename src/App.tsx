@@ -15,7 +15,7 @@ export const App: React.FC = () => {
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [filteringMethod, setFilteringMethod] = useState<FilterMethods>('All');
-  const [loadingTodoId, setLoadingTodoId] = useState<number | null>(null);
+  const [loadingIds, setLoadingIds] = useState<number[]>([]);
   const headerRef = useRef<HeaderRef>(null);
 
   const loadTodos = () => {
@@ -48,7 +48,7 @@ export const App: React.FC = () => {
   }
 
   const deleteTodo = (currentId: number) => {
-    setLoadingTodoId(currentId);
+    setLoadingIds(prev => [...prev, currentId]);
 
     deleteTodos(currentId)
       .then(() => {
@@ -60,7 +60,7 @@ export const App: React.FC = () => {
         setTimeout(() => setErrorMessage(''), 3000);
       })
       .finally(() => {
-        setLoadingTodoId(null);
+        setLoadingIds(prev => prev.filter(id => id !== currentId));
       });
   };
 
@@ -88,7 +88,7 @@ export const App: React.FC = () => {
           tempTodo={tempTodo}
           todos={visibleTodos}
           onDelete={deleteTodo}
-          loadingTodoId={loadingTodoId}
+          loadingTodoIds={loadingIds}
         />
 
         {/* Hide the footer if there are no todos */}
