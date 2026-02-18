@@ -50,7 +50,7 @@ export const App: React.FC = () => {
   const deleteTodo = (currentId: number) => {
     setLoadingIds(prev => [...prev, currentId]);
 
-    deleteTodos(currentId)
+    return deleteTodos(currentId)
       .then(() => {
         setTodosFromServer(prev => prev.filter(todo => todo.id !== currentId));
         headerRef.current?.focusInput();
@@ -65,11 +65,11 @@ export const App: React.FC = () => {
   };
 
   const deleteCompleted = () => {
-    const completedNum = todosFromServer.filter(todo => todo.completed);
+    const completed = todosFromServer.filter(todo => todo.completed);
 
-    for (let i = 0; i < completedNum.length; i++) {
-      deleteTodo(completedNum[i].id);
-    }
+    Promise.all(completed.map(todo => deleteTodo(todo.id))).then(() => {
+      headerRef.current?.focusInput();
+    });
   };
 
   return (
